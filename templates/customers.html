@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Customers | SmartPredict AI{% endblock %}
+{% block heading %}Customers &amp; Bulk Prediction{% endblock %}
+
+{% block content %}
+<!-- ===== BULK UPLOAD ===== -->
+<div class="card-box mb-3">
+  <h6><i class="bi bi-cloud-upload me-1"></i>Bulk Prediction - Upload Customer CSV</h6>
+  <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="row g-2 align-items-center">
+    <div class="col-md-6"><input type="file" name="file" accept=".csv" class="form-control" required></div>
+    <div class="col-auto"><button class="btn btn-brand"><i class="bi bi-magic me-1"></i>Upload &amp; Predict</button></div>
+    <div class="col-12 small text-muted">
+      Required columns: <code>gender, SeniorCitizen, Partner, tenure, MonthlyCharges, Contract, PaymentMethod</code>
+      (<code>customerID</code> and <code>TotalCharges</code> are optional).
+    </div>
+  </form>
+</div>
+
+<!-- ===== SEARCH + FILTER ===== -->
+<div class="card-box">
+  <form method="GET" class="row g-2 mb-3">
+    <input type="hidden" name="source" value="{{ source }}">
+    <div class="col-md-4"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by Customer ID..."></div>
+    <div class="col-md-3">
+      <select name="risk" class="form-select">
+        {% for o in ['All','Low','Medium','High'] %}<option value="{{ o }}" {{ 'selected' if risk == o }}>{{ 'All Risk Levels' if o == 'All' else o + ' Risk' }}</option>{% endfor %}
+      </select></div>
+    <div class="col-auto"><button class="btn btn-brand"><i class="bi bi-search me-1"></i>Search</button></div>
+    <div class="col-md ms-auto text-md-end">
+      <div class="btn-group btn-group-sm">
+        <a class="btn {{ 'btn-primary' if source == 'all' else 'btn-outline-primary' }}" href="{{ url_for('customers', source='all') }}">All Customers</a>
+        <a class="btn {{ 'btn-primary' if source == 'upload' else 'btn-outline-primary' }} {{ '' if has_upload else 'disabled' }}" href="{{ url_for('customers', source='upload') }}">Uploaded Results</a>
+      </div>
+      <a class="btn btn-sm btn-success ms-1" href="{{ url_for('download', source=source) }}"><i class="bi bi-download me-1"></i>Download CSV</a>
+    </div>
+  </form>
+
+  <div class="small text-muted mb-2">Showing {{ total }} customers (page {{ page }} of {{ pages }})</div>
+
+  <!-- ===== TABLE ===== -->
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead><tr>
+        <th>Customer ID</th><th>Contract</th><th>Tenure</th><th>Monthly $</th>
+        <th>Churn Prob.</th><th>Prediction</th><th>Risk Score</th><th>Risk Level</th><th>Recommendation</th>
+      </tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="fw-semibold">{{ r.customerID }}</td>
+          <td>{{ r.Contract }}</td>
+          <td>{{ r.tenure | int }}</td>
+          <td>{{ '%.2f' | format(r.MonthlyCharges) }}</td>
+          <td>{{ r.Churn_Probability }}%</td>
+          <td class="{{ 'text-danger' if r.Churn_Prediction == 'Will Churn' else 'text-success' }}">{{ r.Churn_Prediction }}</td>
+          <td>{{ r.Risk_Score }}</td>
+          <td><span class="badge-risk badge-{{ r.Risk_Level | lower }}">{{ r.Risk_Level }}</span></td>
+          <td class="small rec-cell">{{ r.Recommendation if r.Risk_Level == 'High' else '-' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="9" class="text-center text-muted py-4">No customers found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== PAGINATION ===== -->
+  <nav><ul class="pagination pagination-sm justify-content-center mb-0">
+    <li class="page-item {{ 'disabled' if page <= 1 }}">
+      <a class="page-link" href="{{ url_for('customers', source=source, q=q, risk=risk, page=page-1) }}">Previous</a></li>
+    <li class="page-item disabled"><span class="page-link">{{ page }} / {{ pages }}</span></li>
+    <li class="page-item {{ 'disabled' if page >= pages }}">
+      <a class="page-link" href="{{ url_for('customers', source=source, q=q, risk=risk, page=page+1) }}">Next</a></li>
+  </ul></nav>
+</div>
+{% endblock %}

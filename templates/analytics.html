@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Risk Analytics | SmartPredict AI{% endblock %}
+{% block heading %}Risk Analytics{% endblock %}
+
+{% block content %}
+<!-- ===== RISK LEVEL SUMMARY (color-coded badges) ===== -->
+<div class="row g-3 mb-4">
+  {% for lvl in ['Low','Medium','High'] %}
+  <div class="col-md-4"><div class="card-box text-center">
+    <span class="badge-risk badge-{{ lvl | lower }} big">{{ lvl }} Risk</span>
+    <div class="kpi-value mt-2">{{ '{:,}'.format(levels[lvl]) }}</div>
+    <div class="metric-label">{{ {'Low':'Score 0-40','Medium':'Score 41-70','High':'Score 71-100'}[lvl] }}</div>
+  </div></div>
+  {% endfor %}
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6"><div class="card-box">
+    <h6>Average Risk Score by Contract</h6><div class="chart-wrap"><canvas id="c1"></canvas></div></div></div>
+  <div class="col-lg-6"><div class="card-box">
+    <h6>Churn Rate by Payment Method</h6><div class="chart-wrap"><canvas id="c2"></canvas></div></div></div>
+  <div class="col-lg-6"><div class="card-box">
+    <h6>Model Comparison</h6><div class="chart-wrap"><canvas id="c3"></canvas></div></div></div>
+  <div class="col-lg-6"><div class="card-box">
+    <h6>Retention Actions Needed (High-Risk Customers)</h6>
+    <ul class="list-group list-group-flush">
+      {% for name, count in actions.items() %}
+      <li class="list-group-item d-flex justify-content-between align-items-center px-0">{{ name }}
+        <span class="badge bg-primary rounded-pill">{{ count }}</span></li>
+      {% endfor %}
+    </ul>
+    <div class="small text-muted mt-2">One customer can need more than one action.</div></div></div>
+</div>
+
+<!-- ===== TOP 10 HIGH RISK ===== -->
+<div class="card-box">
+  <h6>Top 10 Highest-Risk Customers</h6>
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Customer ID</th><th>Contract</th><th>Tenure</th><th>Monthly $</th><th>Risk Score</th><th>Level</th><th>Recommendation</th></tr></thead>
+    <tbody>
+    {% for r in top10 %}
+      <tr><td class="fw-semibold">{{ r.customerID }}</td><td>{{ r.Contract }}</td><td>{{ r.tenure | int }}</td>
+          <td>{{ '%.2f' | format(r.MonthlyCharges) }}</td><td>{{ r.Risk_Score }}</td>
+          <td><span class="badge-risk badge-high">High</span></td><td class="small">{{ r.Recommendation }}</td></tr>
+    {% endfor %}
+    </tbody></table></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const charts = {{ charts | tojson }};
+  const colors = ['#1d4ed8', '#38bdf8', '#10b981'];
+  const opts = { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } };
+
+  new Chart(document.getElementById('c1'), { type: 'bar',
+    data: { labels: charts.contract.labels, datasets: [{ data: charts.contract.values, backgroundColor: colors, borderRadius: 8 }] }, options: opts });
+
+  new Chart(document.getElementById('c2'), { type: 'bar',
+    data: { labels: charts.payment.labels, datasets: [{ data: charts.payment.values, backgroundColor: '#3b82f6', borderRadius: 8 }] }, options: opts });
+
+  // Model comparison: one bar group per metric, one color per model
+  const sets = Object.entries(charts.models.sets).map(([name, vals], i) => ({ label: name, data: vals, backgroundColor: colors[i], borderRadius: 6 }));
+  new Chart(document.getElementById('c3'), { type: 'bar',
+    data: { labels: charts.models.labels, datasets: sets },
+    options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { position: 'bottom' } } } });
+</script>
+{% endblock %}

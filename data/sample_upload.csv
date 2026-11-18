@@ -1,0 +1,7 @@
+customerID,gender,SeniorCitizen,Partner,tenure,MonthlyCharges,TotalCharges,Contract,PaymentMethod
+NEW-001,Male,0,No,2,98.50,197.00,Month-to-month,Electronic check
+NEW-002,Female,1,Yes,48,72.10,3460.80,One year,Credit card (automatic)
+NEW-003,Female,0,Yes,65,45.30,2944.50,Two year,Bank transfer (automatic)
+NEW-004,Male,0,No,5,89.90,449.50,Month-to-month,Mailed check
+NEW-005,Male,1,No,1,104.20,104.20,Month-to-month,Electronic check
+NEW-006,Female,0,Yes,30,60.00,1800.00,One year,Mailed check

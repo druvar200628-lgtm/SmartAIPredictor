@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | SmartPredict AI{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- ===== 4 KPI CARDS ===== -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3"><div class="kpi">
+    <div class="kpi-icon bg-primary-soft"><i class="bi bi-people-fill"></i></div>
+    <div><div class="kpi-label">Total Customers</div><div class="kpi-value">{{ kpis.total }}</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="kpi">
+    <div class="kpi-icon bg-danger-soft"><i class="bi bi-person-dash-fill"></i></div>
+    <div><div class="kpi-label">Churn Rate</div><div class="kpi-value">{{ kpis.churn_rate }}%</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="kpi">
+    <div class="kpi-icon bg-warning-soft"><i class="bi bi-speedometer"></i></div>
+    <div><div class="kpi-label">Avg Risk Score</div><div class="kpi-value">{{ kpis.avg_risk }}</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="kpi">
+    <div class="kpi-icon bg-danger-soft"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    <div><div class="kpi-label">High Risk Customers</div><div class="kpi-value">{{ kpis.high_risk }}</div></div></div></div>
+</div>
+
+<!-- ===== 3 CHARTS ===== -->
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card-box">
+    <h6>Churn Rate by Contract Type</h6><div class="chart-wrap"><canvas id="contractChart"></canvas></div></div></div>
+  <div class="col-lg-6"><div class="card-box">
+    <h6>Churn Rate by Tenure (months)</h6><div class="chart-wrap"><canvas id="tenureChart"></canvas></div></div></div>
+  <div class="col-lg-6"><div class="card-box">
+    <h6>Risk Level Distribution</h6><div class="chart-wrap"><canvas id="riskChart"></canvas></div></div></div>
+  <div class="col-lg-6"><div class="card-box">
+    <h6>How to read this dashboard</h6>
+    <ul class="small text-muted mb-0 lh-lg">
+      <li><b>Churn Rate</b> = % of customers who left the company.</li>
+      <li><b>Risk Score</b> (0-100) combines churn probability, bill size and how new the customer is.</li>
+      <li><span class="badge-risk badge-low">Low</span> 0-40 &nbsp;
+          <span class="badge-risk badge-medium">Medium</span> 41-70 &nbsp;
+          <span class="badge-risk badge-high">High</span> 71-100</li>
+      <li>Month-to-month customers and new customers churn the most.</li>
+    </ul></div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Data comes from Flask (app.py) as JSON -> Chart.js draws it
+  const charts = {{ charts | tojson }};
+
+  // Chart 1: Bar - churn by contract
+  new Chart(document.getElementById('contractChart'), {
+    type: 'bar',
+    data: { labels: charts.contract.labels,
+            datasets: [{ label: 'Churn %', data: charts.contract.values,
+                         backgroundColor: ['#ef4444', '#3b82f6', '#10b981'], borderRadius: 8 }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { display: false } },
+               scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } } } }
+  });
+
+  // Chart 2: Line - churn by tenure
+  new Chart(document.getElementById('tenureChart'), {
+    type: 'line',
+    data: { labels: charts.tenure.labels,
+            datasets: [{ label: 'Churn %', data: charts.tenure.values, borderColor: '#1d4ed8',
+                         backgroundColor: 'rgba(29,78,216,.12)', fill: true, tension: .35, pointRadius: 5 }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { display: false } },
+               scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } } } }
+  });
+
+  // Chart 3: Doughnut - risk distribution
+  new Chart(document.getElementById('riskChart'), {
+    type: 'doughnut',
+    data: { labels: charts.risk.labels,
+            datasets: [{ data: charts.risk.values, backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }] },
+    options: { maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom' } } }
+  });
+</script>
+{% endblock %}
